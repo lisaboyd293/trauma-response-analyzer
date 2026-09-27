@@ -84,6 +84,9 @@
   .eyebrow { @apply font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-ink-muted; }
   .brand-mark { @apply flex size-9 items-center justify-center rounded-full bg-sage-dark text-cream; box-shadow: 0 8px 20px rgba(45,107,94,.17); }
   .header-link { @apply flex items-center gap-1.5 text-xs font-semibold text-ink-soft transition-colors hover:text-sage-dark; }
+  .header-actions { @apply flex items-center gap-4; }
+  .install-button { @apply inline-flex items-center gap-1.5 rounded-full border border-sage/35 bg-sage/10 px-3 py-1.5 text-xs font-semibold text-sage-dark transition duration-200 hover:-translate-y-0.5 hover:border-sage hover:bg-sage/20 active:scale-[.98]; }
+  .offline-banner { @apply flex items-center justify-center gap-2 border-b border-terracotta/20 bg-terracotta/8 px-5 py-2.5 text-xs font-medium text-terracotta; }
   .hero-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr); gap: clamp(2rem, 8vw, 8rem); }
   .hero-grid::before { content: ""; position: absolute; left: -10rem; top: 3rem; width: 25rem; height: 25rem; border-radius: 999px; background: rgba(118,165,150,.08); filter: blur(2px); pointer-events: none; }
   .hero-note { position: relative; padding: 1.75rem; border: 1px solid rgba(45,107,94,.18); border-radius: 1.35rem; background: rgba(231,240,232,.62); box-shadow: 0 22px 60px rgba(32,52,48,.07); }
@@ -114,6 +117,8 @@
 
 @media (max-width: 560px) {
   .hero-grid { padding-top: 2rem; }
+  .header-actions { gap: .65rem; }
+  .install-button { padding-left: .6rem; padding-right: .6rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {

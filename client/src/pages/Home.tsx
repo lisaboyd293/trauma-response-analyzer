@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import type { inferRouterOutputs } from "@trpc/server";
 import type { AppRouter } from "../../../server/routers";
@@ -11,6 +11,7 @@ import {
   ChevronRight,
   CircleAlert,
   Compass,
+  Download,
   ExternalLink,
   HeartHandshake,
   Loader2,
@@ -18,10 +19,16 @@ import {
   RotateCcw,
   ShieldCheck,
   Sparkles,
+  WifiOff,
   Waves,
 } from "lucide-react";
 
 type Analysis = inferRouterOutputs<AppRouter>["trauma"]["analyze"];
+
+type InstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
 
 const examples = [
   "When someone is upset with me, I immediately go quiet, feel far away, and cannot find words. Afterwards I feel exhausted.",
@@ -143,6 +150,9 @@ export default function Home() {
   const [experience, setExperience] = useState("");
   const [context, setContext] = useState("");
   const [analysis, setAnalysis] = useState<NonNullable<Analysis> | null>(null);
+  const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isOnline, setIsOnline] = useState(() => navigator.onLine);
   const analyze = trpc.trauma.analyze.useMutation({
     onSuccess: (result) => {
       setAnalysis(result);
@@ -151,6 +161,40 @@ export default function Home() {
     onError: (error) => toast.error(error.message || "We couldn't complete the reflection. Please try again."),
   });
   const charCount = useMemo(() => experience.length, [experience]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const updateInstalled = () => setIsInstalled(mediaQuery.matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone));
+    const captureInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      setInstallPrompt(event as InstallPromptEvent);
+    };
+    const clearInstallPrompt = () => {
+      setInstallPrompt(null);
+      setIsInstalled(true);
+    };
+    const updateOnline = () => setIsOnline(navigator.onLine);
+
+    updateInstalled();
+    window.addEventListener("beforeinstallprompt", captureInstallPrompt);
+    window.addEventListener("appinstalled", clearInstallPrompt);
+    window.addEventListener("online", updateOnline);
+    window.addEventListener("offline", updateOnline);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", captureInstallPrompt);
+      window.removeEventListener("appinstalled", clearInstallPrompt);
+      window.removeEventListener("online", updateOnline);
+      window.removeEventListener("offline", updateOnline);
+    };
+  }, []);
+
+  const installApp = async () => {
+    if (!installPrompt) return;
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === "accepted") toast.success("Stillpoint is ready on your home screen.");
+    setInstallPrompt(null);
+  };
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -176,8 +220,12 @@ export default function Home() {
           <span className="font-display text-lg tracking-tight">stillpoint</span>
         </a>
         <div className="hidden items-center gap-6 text-xs font-medium uppercase tracking-[0.16em] text-ink-muted sm:flex"><span>Educational tool</span><span className="h-1 w-1 rounded-full bg-sage" /><span>Not a diagnosis</span></div>
-        <a className="header-link" href="#how-it-works">How it works <ArrowUpRight size={14} /></a>
+        <div className="header-actions">
+          {!isInstalled && installPrompt && <button type="button" className="install-button" onClick={installApp}><Download size={14} /> Install</button>}
+          <a className="header-link" href="#how-it-works">How it works <ArrowUpRight size={14} /></a>
+        </div>
       </header>
+      {!isOnline && <div className="offline-banner"><WifiOff size={14} /> Offline mode: the app shell is available, but reflections need a connection.</div>}
 
       <main>
         <section className="hero-grid mx-auto max-w-7xl px-5 pb-14 pt-10 sm:px-8 sm:pt-16 lg:px-12 lg:pb-24 lg:pt-20">
